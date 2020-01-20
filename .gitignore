@@ -1,3 +1,7 @@
 _site/
 .Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+blogdown
 public/
