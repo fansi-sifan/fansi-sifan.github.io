@@ -1,9 +1,9 @@
 [build]
   command = "hugo"
-  publish = "public"
+  publish = "public"  
 
 [build.environment]
-  HUGO_THEME = "academic"
+  HUGO_THEME = "hugo-academic"
   HUGO_VERSION = "0.62.2"
   HUGO_ENABLEGITINFO = "true"
 
