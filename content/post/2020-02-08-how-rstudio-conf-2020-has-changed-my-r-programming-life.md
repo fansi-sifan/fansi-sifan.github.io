@@ -25,7 +25,7 @@ Like most of the R users, I'm largely self-taught with weird gaps and false beli
 
 Here are some of my previous false beliefs about R and how that has changed.
 
-> copy+paste+google is the only way to debug my R code because the Error message doesn't make any sense
+> ## copy+paste+google is the only way to debug my R code because the Error message doesn't make any sense
 
 Let's admit it, debugging from a mysterious error message is hard. So my first reaction is always copy the entire error message and google it, and hoping someone has already figured it out somewhere on the web.  
 
@@ -39,11 +39,7 @@ Jenny's awesome keynote walks through "four stages of debugging":
 4. Deter: write test and assertations into functions to plan for the unexpected. The [`testthat`](https://testthat.r-lib.org/) package is built specifically for this purpose. 
 
 
->	`.Rprofile` ? `.Renviron`? Um, these dotfiles seem weird, I  better not mess up with these.
-
-
-
-What they forgot to teach you about R
+> ## 	`.Rprofile` ? `.Renviron`? Um, these dotfiles seem weird, I  better not mess up with these.
 
 Actually, these are files that help you to customize your R sessions. `.Renviron` is most useful for storing sensitive information such as your cnesus API keys, or GitHub PAT. `.Rprofile` contains R code you want to run at every R start up. Here's what I decided to include in my `.Rprofile` for now!
 
@@ -67,19 +63,19 @@ Actually, these are files that help you to customize your R sessions. `.Renviron
 Again, Jenny has a great chapter here explaining these two files on [R startup](https://rstats.wtf/r-startup.html)
 
 
-> Only R developers write packages so that has nothing to do with me. 
+> ##  Only R developers write packages so that has nothing to do with me. 
 
 Surprise! R packages are useful even if you never share your code! In Hadley's word, *"Organising code in a package makes your life easier because packages come with conventions"*. In this sense, packages create a perfect structure for any data analyses preojcts. where `/R` contains all your functions, and `/data` contains all datasets you need. RMD files that you use to generate report can go in `/vignettes`. 
 
 Another great use of R package is a personal repository of functions. It might be a function you came across that you found useful, or something that you wrote and use quite often. Wrapping those functions in one package makes it so much easier to track. 
 
-> I wish there was a `tidyverse` for machine learning… 
+> ##  I wish there was a `tidyverse` for machine learning… 
 
 Well, actually there is! It's [tidymodels](https://www.tidyverse.org/blog/2018/08/tidymodels-0-0-1/). It contains everything from defining [recipes](https://tidymodels.github.io/recipes/) to encode and preprocess different datasets, to help [tune](https://tidymodels.github.io/tune/articles/getting_started.html) parameters for your model. 
 
 If you are familiar with `caret`, `tidymodels` is created by the same author (Max Kuhn) who wanted to correct for the "mistakes" in `caret` development :)
 
-> `ggplot2` is great, but let me copy the plots to Excel so that I can customize my plot title/legend/caption text… 
+> ##  `ggplot2` is great, but let me copy the plots to Excel so that I can customize my plot title/legend/caption text… 
 
 There's [`ggtext`](https://wilkelab.org/ggtext/)! It allows you to customize text font and color in ggplots using html syntex. Here's an example: 
 
