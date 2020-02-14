@@ -29,7 +29,7 @@ Here are some of my previous false beliefs about R and how that has changed.
 
 Let's admit it, debugging from a mysterious error message is hard. So my first reaction is always copy the entire error message and google it, and hoping someone has already figured it out somewhere on the web.  
 
-Jenny's awesome keynote walks through "four stages of debugging": 
+But there's a more effective way! Jenny's awesome keynote walks through "four stages of debugging": 
 1. Reset: Restart R session - it seems that the wisdom of turning things off and on applies to everything. 
 
 2. **REPR**oducible **EX**ample: Try narrow down the problem by creating a **minimal** **REPR**oducible **EX**ample, using only what is needed to see the problem. Bonus: there's even a [`REPREX`](https://github.com/tidyverse/reprex#readme) package that makes it easier to prepare your R code for posting on StackOverflow/GitHub/Slack when asking for help!
@@ -48,12 +48,9 @@ Actually, these are files that help you to customize your R sessions. `.Renviron
 # note that you should not load packages that used in actual analysis like tidyverse because that would not be reproducibile on other machines. 
   library(usethis)
   library(devtools)
-  library(skim)
+  library(skimr)
   
-# 2. make all warnings errors for robost coding habit
-  options(warn = 2)
-  
-# 3. Get a fortune cookie! (just for fun...)
+# 2. Get a fortune cookie! (just for fun...)
   if (interactive()) # sessions you are controlling with a terminal
     { # (requires fortunes package)
       fortunes::fortune()
@@ -67,7 +64,7 @@ Again, Jenny has a great chapter here explaining these two files on [R startup](
 
 Surprise! R packages are useful even if you never share your code! In Hadley's word, *"Organising code in a package makes your life easier because packages come with conventions"*. In this sense, packages create a perfect structure for any data analyses preojcts. where `/R` contains all your functions, and `/data` contains all datasets you need. RMD files that you use to generate report can go in `/vignettes`. 
 
-Another great use of R package is a personal repository of functions. It might be a function you came across that you found useful, or something that you wrote and use quite often. Wrapping those functions in one package makes it so much easier to track. 
+Another great use of R package is for creating a personal repository of functions. It might be a function you came across that you found useful, or something that you wrote and use quite often. Wrapping those functions in one package makes it so much easier to track. 
 
 > ##  I wish there was a `tidyverse` for machine learning… 
 
@@ -77,7 +74,7 @@ If you are familiar with `caret`, `tidymodels` is created by the same author (Ma
 
 > ##  `ggplot2` is great, but let me copy the plots to Excel so that I can customize my plot title/legend/caption text… 
 
-There's [`ggtext`](https://wilkelab.org/ggtext/)! It allows you to customize text font and color in ggplots using html syntex. Here's an example: 
+There's [`ggtext`](https://wilkelab.org/ggtext/)! It allows you to customize text font and color in ggplots using html syntex. Here's an example from the author: 
 
 ![ggtext example](https://wilkelab.org/ggtext/reference/figures/README-unnamed-chunk-4-1.png)
 
