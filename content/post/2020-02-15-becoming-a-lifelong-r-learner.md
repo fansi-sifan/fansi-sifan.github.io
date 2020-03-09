@@ -1,5 +1,5 @@
 ---
-title: Becoming a lifelong R learner (for free!)
+title: Becoming a lifelong R learner
 author: Sifan
 date: '2020-02-15'
 slug: becoming-a-lifelong-r-learner
