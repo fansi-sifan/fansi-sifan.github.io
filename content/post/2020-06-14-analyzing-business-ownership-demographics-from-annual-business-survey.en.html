@@ -100,8 +100,8 @@ abs_var &lt;- c(&quot;GEO_ID&quot;, &quot;NAICS2017&quot;, &quot;NAICS2017_LABEL
   vars = abs_var,
   region = &quot;metropolitan statistical area/micropolitan statistical area:*&quot;,
   key = Sys.getenv(&quot;CENSUS_API_KEY&quot;)
-)
-
+) %&gt;% 
+  mutate(GEOID = str_sub(GEO_ID, -5,-1)) 
 
 stco_abs_naics &lt;- getCensus(
   name = &quot;abscs&quot;,
@@ -109,14 +109,15 @@ stco_abs_naics &lt;- getCensus(
   vars = abs_var,
   region = &quot;county:*&quot;,
   key = Sys.getenv(&quot;CENSUS_API_KEY&quot;)
-)</code></pre>
+) %&gt;% 
+  mutate(GEOID = str_sub(GEO_ID, -5,-1))</code></pre>
 </div>
 <div id="exploratory-data-analysis" class="section level2">
 <h2>Exploratory Data Analysis</h2>
-<p>How does business ownership demographics look like in Detroit metropolita area?</p>
+<p>How does business ownership demographics look like in Detroit and Birmingham?</p>
 <p>First, let’s specify the <a href="https://www.census.gov/programs-surveys/geography/guidance/geo-identifiers.html">GEOIDs</a> of the place of interests. If you are not familiar with census geographies, MCDC has a very friendly GEOID <a href="https://census.missouri.edu/geocodes/">lookup</a> tool.</p>
 <pre class="r"><code>target_cbsa &lt;- c(&quot;19820&quot;,&quot;13820&quot;)   # cbsa codes for Detroit-Warren-Dearborn, MI and Birmingham-Hoover, AL</code></pre>
-<p>Now we can find everything about Detroit by filtering the raw data. Use <code>count()</code> to get the codebook of <code>NAICS2017</code>, <code>SEX</code>, <code>RACE_GROUP</code>, <code>ETH_GROUP</code>, <code>VET_GROUP</code>.</p>
+<p>Now we can find everything about these two metro areas by filtering the raw data. Use <code>count()</code> to get the codebook of <code>NAICS2017</code>, <code>SEX</code>, <code>RACE_GROUP</code>, <code>ETH_GROUP</code>, <code>VET_GROUP</code>. For example:</p>
 <pre class="r"><code>cbsa_abs_naics %&gt;% 
   count(SEX, SEX_LABEL)</code></pre>
 <pre><code>##   SEX           SEX_LABEL      n
@@ -126,39 +127,163 @@ stco_abs_naics &lt;- getCensus(
 ## 4 004 Equally male/female  16123
 ## 5 096        Classifiable   8325
 ## 6 098      Unclassifiable   7937</code></pre>
+<p>Let’s take a look at female ownership. So we will get data for female (<code>002</code>), and all businesses that could be classified by gender (<code>096</code>).</p>
 <pre class="r"><code>cbsa_result &lt;- cbsa_abs_naics %&gt;% 
-  mutate(cbsa_code = str_sub(GEO_ID, -5,-1)) %&gt;% 
-  filter(cbsa_code %in% target_cbsa) %&gt;% 
+  filter(GEOID %in% target_cbsa) %&gt;% 
   filter(SEX %in% c(&quot;002&quot;,&quot;096&quot;)) %&gt;% 
   filter(NAICS2017 == &quot;72&quot;) %&gt;% 
-  select(cbsa_code, contains(&quot;_LABEL&quot;), FIRMPDEMP, EMP, RCPPDEMP, PAYANN) 
+  select(GEOID, contains(&quot;_LABEL&quot;), FIRMPDEMP, EMP, RCPPDEMP, PAYANN) 
 
 cbsa_result</code></pre>
-<pre><code>##   cbsa_code                 NAICS2017_LABEL    SEX_LABEL ETH_GROUP_LABEL
-## 1     13820 Accommodation and food services       Female           Total
-## 2     13820 Accommodation and food services Classifiable    Classifiable
-## 3     19820 Accommodation and food services       Female           Total
-## 4     19820 Accommodation and food services Classifiable    Classifiable
+<pre><code>##   GEOID                 NAICS2017_LABEL    SEX_LABEL ETH_GROUP_LABEL
+## 1 13820 Accommodation and food services       Female           Total
+## 2 13820 Accommodation and food services Classifiable    Classifiable
+## 3 19820 Accommodation and food services       Female           Total
+## 4 19820 Accommodation and food services Classifiable    Classifiable
 ##   RACE_GROUP_LABEL VET_GROUP_LABEL FIRMPDEMP    EMP RCPPDEMP  PAYANN
 ## 1            Total           Total       256   3404   184036   57926
 ## 2     Classifiable    Classifiable      1479  29483  1736740  482008
 ## 3            Total           Total      1195  20522  1548070  382517
 ## 4     Classifiable    Classifiable      6387 129103  7308642 2047629</code></pre>
-<p>Let’s reshape the data to calculate number of firms (<code>FIRMPDEMP</code>), employment (<code>EMP</code>), receipts (<code>RCPPDEMP</code>), and payroll (<code>PAYANN</code>) of female-owed businesses in these two metro areas</p>
+<p>I’m going to reshape the data to calculate number of firms (<code>FIRMPDEMP</code>), employment (<code>EMP</code>), receipts (<code>RCPPDEMP</code>), and payroll (<code>PAYANN</code>) of female-owed businesses in these two metro areas.</p>
 <pre class="r"><code>cbsa_result %&gt;% 
   pivot_longer(FIRMPDEMP:PAYANN) %&gt;%
   mutate(value = as.numeric(value)) %&gt;% 
-  select(cbsa_code, NAICS2017_LABEL, SEX_LABEL, name, value) %&gt;% 
+  select(GEOID, NAICS2017_LABEL, SEX_LABEL, name, value) %&gt;% 
   pivot_wider(names_from = &quot;SEX_LABEL&quot;, values_from = &quot;value&quot;) %&gt;% 
   mutate(pct_female = Female/Classifiable) %&gt;% 
   
   ggplot(aes(x = name, y = pct_female, fill = name, label = scales::percent(pct_female, accuracy = 0.1)))+
   geom_col()+
   geom_text(vjust = -0.5)+
-  facet_wrap(~cbsa_code)+
+  facet_wrap(~GEOID)+
   scale_y_continuous(labels = scales::percent, &quot;share of female owned businesses&quot;)+
   theme_classic()</code></pre>
 <p><img src="/post/2020-06-14-analyzing-business-ownership-demographics-from-annual-business-survey.en_files/figure-html/reshape%20and%20plot-1.png" width="672" /></p>
-<p>We can see that female business ownership is similar in these Birmingham and Detroit (17.3% and 18.7%), but female-owned firms are much smaller in size in Birmingham. They only account for 11.5% of total employment, 12% of payroll, and 10.6% of total sales and receipts.</p>
-<p>Now that we have this building block, we can easily apply this to other regions, and explore other demographic groups such as black-owned businesses, minority-owned businesses.</p>
+<p>We can see that in the accommodation sector, female business ownership is similar in Birmingham and Detroit (17.3% and 18.7%), but female-owned firms are much smaller in size in Birmingham. They only account for 11.5% of total employment, 12% of payroll, and 10.6% of total sales and receipts.</p>
+</div>
+<div id="scale-it-up" class="section level2">
+<h2>Scale it up</h2>
+<p>Let’s write a function to easily adapt this script to explore explore other demographic groups in other regions.</p>
+<pre class="r"><code>summarise_abs &lt;- function(df, target, col, col_var, NAICS = &quot;00&quot;){
+  col &lt;- enquo(col)
+  col_LABEL &lt;- paste0((rlang::as_label(col)),&quot;_LABEL&quot;)
+    
+df %&gt;% 
+  filter(GEOID %in% target) %&gt;% 
+  filter(!!col %in% col_var) %&gt;% 
+  filter(NAICS2017 == NAICS) %&gt;%
+    
+  select(GEOID, contains(&quot;_LABEL&quot;), FIRMPDEMP, EMP, RCPPDEMP, PAYANN) %&gt;% 
+  pivot_longer(FIRMPDEMP:PAYANN) %&gt;%
+  mutate(value = as.numeric(value)) %&gt;% 
+  select(GEOID, NAICS2017_LABEL, col_LABEL, name, value) %&gt;% 
+  pivot_wider(names_from = col_LABEL, values_from = value) 
+}</code></pre>
+<p>Now, let’s look at Asian business ownership in Arlington County, VA (<code>51013</code>)</p>
+<pre class="r"><code>stco_abs_naics %&gt;% 
+  summarise_abs(&quot;51013&quot;,RACE_GROUP, c(&quot;60&quot;,&quot;96&quot;))%&gt;% 
+  mutate(pct_asian = Asian/Classifiable) %&gt;% 
+  knitr::kable()</code></pre>
+<pre><code>## Note: Using an external vector in selections is ambiguous.
+## i Use `all_of(col_LABEL)` instead of `col_LABEL` to silence this message.
+## i See &lt;https://tidyselect.r-lib.org/reference/faq-external-vector.html&gt;.
+## This message is displayed once per session.</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">GEOID</th>
+<th align="left">NAICS2017_LABEL</th>
+<th align="left">name</th>
+<th align="right">Asian</th>
+<th align="right">Classifiable</th>
+<th align="right">pct_asian</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">51013</td>
+<td align="left">Total for all sectors</td>
+<td align="left">FIRMPDEMP</td>
+<td align="right">622</td>
+<td align="right">3655</td>
+<td align="right">0.1701778</td>
+</tr>
+<tr class="even">
+<td align="left">51013</td>
+<td align="left">Total for all sectors</td>
+<td align="left">EMP</td>
+<td align="right">6587</td>
+<td align="right">50475</td>
+<td align="right">0.1305002</td>
+</tr>
+<tr class="odd">
+<td align="left">51013</td>
+<td align="left">Total for all sectors</td>
+<td align="left">RCPPDEMP</td>
+<td align="right">1307860</td>
+<td align="right">9785745</td>
+<td align="right">0.1336495</td>
+</tr>
+<tr class="even">
+<td align="left">51013</td>
+<td align="left">Total for all sectors</td>
+<td align="left">PAYANN</td>
+<td align="right">384583</td>
+<td align="right">3182245</td>
+<td align="right">0.1208527</td>
+</tr>
+</tbody>
+</table>
+<p>Or, Hispanic business ownership in professional services sector in Austin-Round Rock, TX metro area (<code>12420</code>)</p>
+<pre class="r"><code>cbsa_abs_naics %&gt;% 
+  summarise_abs(&quot;12420&quot;,ETH_GROUP, c(&quot;020&quot;,&quot;096&quot;), &quot;54&quot;) %&gt;% 
+  mutate(pct_hispanic = Hispanic/Classifiable) %&gt;% 
+  knitr::kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">GEOID</th>
+<th align="left">NAICS2017_LABEL</th>
+<th align="left">name</th>
+<th align="right">Hispanic</th>
+<th align="right">Classifiable</th>
+<th align="right">pct_hispanic</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">12420</td>
+<td align="left">Professional, scientific, and technical services</td>
+<td align="left">FIRMPDEMP</td>
+<td align="right">430</td>
+<td align="right">8278</td>
+<td align="right">0.0519449</td>
+</tr>
+<tr class="even">
+<td align="left">12420</td>
+<td align="left">Professional, scientific, and technical services</td>
+<td align="left">EMP</td>
+<td align="right">2210</td>
+<td align="right">51394</td>
+<td align="right">0.0430011</td>
+</tr>
+<tr class="odd">
+<td align="left">12420</td>
+<td align="left">Professional, scientific, and technical services</td>
+<td align="left">RCPPDEMP</td>
+<td align="right">289735</td>
+<td align="right">10400407</td>
+<td align="right">0.0278580</td>
+</tr>
+<tr class="even">
+<td align="left">12420</td>
+<td align="left">Professional, scientific, and technical services</td>
+<td align="left">PAYANN</td>
+<td align="right">123854</td>
+<td align="right">3865307</td>
+<td align="right">0.0320425</td>
+</tr>
+</tbody>
+</table>
 </div>

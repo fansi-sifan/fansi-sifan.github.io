@@ -212,8 +212,8 @@ cbsa_abs_naics <- getCensus(
   vars = abs_var,
   region = "metropolitan statistical area/micropolitan statistical area:*",
   key = Sys.getenv("CENSUS_API_KEY")
-)
-
+) %>% 
+  mutate(GEOID = str_sub(GEO_ID, -5,-1)) 
 
 stco_abs_naics <- getCensus(
   name = "abscs",
@@ -221,14 +221,14 @@ stco_abs_naics <- getCensus(
   vars = abs_var,
   region = "county:*",
   key = Sys.getenv("CENSUS_API_KEY")
-)
-
+) %>% 
+  mutate(GEOID = str_sub(GEO_ID, -5,-1))
 
 ```
 
 
 ## Exploratory Data Analysis
-How does business ownership demographics look like in Detroit metropolita area? 
+How does business ownership demographics look like in Detroit and Birmingham? 
 
 First, let's specify the [GEOIDs](https://www.census.gov/programs-surveys/geography/guidance/geo-identifiers.html) of the place of interests. If you are not familiar with census geographies, MCDC has a very friendly GEOID [lookup](https://census.missouri.edu/geocodes/) tool.  
 
@@ -238,7 +238,7 @@ target_cbsa <- c("19820","13820")   # cbsa codes for Detroit-Warren-Dearborn, MI
 
 ```
 
-Now we can find everything about Detroit by filtering the raw data. Use `count()` to get the codebook of `NAICS2017`, `SEX`, `RACE_GROUP`, `ETH_GROUP`, `VET_GROUP`. 
+Now we can find everything about these two metro areas by filtering the raw data. Use `count()` to get the codebook of `NAICS2017`, `SEX`, `RACE_GROUP`, `ETH_GROUP`, `VET_GROUP`. For example:
 
 ```{r codebook}
 cbsa_abs_naics %>% 
@@ -246,36 +246,78 @@ cbsa_abs_naics %>%
 ```
 
 
+Let's take a look at female ownership. So we will get data for female (`002`), and all businesses that could be classified by gender (`096`).
+
 ```{r filter metro data}
 cbsa_result <- cbsa_abs_naics %>% 
-  mutate(cbsa_code = str_sub(GEO_ID, -5,-1)) %>% 
-  filter(cbsa_code %in% target_cbsa) %>% 
+  filter(GEOID %in% target_cbsa) %>% 
   filter(SEX %in% c("002","096")) %>% 
   filter(NAICS2017 == "72") %>% 
-  select(cbsa_code, contains("_LABEL"), FIRMPDEMP, EMP, RCPPDEMP, PAYANN) 
+  select(GEOID, contains("_LABEL"), FIRMPDEMP, EMP, RCPPDEMP, PAYANN) 
 
 cbsa_result
 
 ```
 
-Let's reshape the data to calculate number of firms (`FIRMPDEMP`), employment (`EMP`), receipts (`RCPPDEMP`), and payroll (`PAYANN`) of female-owed businesses in these two metro areas
+I'm going to reshape the data to calculate number of firms (`FIRMPDEMP`), employment (`EMP`), receipts (`RCPPDEMP`), and payroll (`PAYANN`) of female-owed businesses in these two metro areas. 
+
 ```{r reshape and plot}
 cbsa_result %>% 
   pivot_longer(FIRMPDEMP:PAYANN) %>%
   mutate(value = as.numeric(value)) %>% 
-  select(cbsa_code, NAICS2017_LABEL, SEX_LABEL, name, value) %>% 
+  select(GEOID, NAICS2017_LABEL, SEX_LABEL, name, value) %>% 
   pivot_wider(names_from = "SEX_LABEL", values_from = "value") %>% 
   mutate(pct_female = Female/Classifiable) %>% 
   
   ggplot(aes(x = name, y = pct_female, fill = name, label = scales::percent(pct_female, accuracy = 0.1)))+
   geom_col()+
   geom_text(vjust = -0.5)+
-  facet_wrap(~cbsa_code)+
+  facet_wrap(~GEOID)+
   scale_y_continuous(labels = scales::percent, "share of female owned businesses")+
   theme_classic()
 ```
 
 
-We can see that female business ownership is similar in these Birmingham and Detroit (17.3% and 18.7%), but female-owned firms are much smaller in size in Birmingham. They only account for 11.5% of total employment, 12% of payroll, and 10.6% of total sales and receipts. 
+We can see that in the accommodation sector, female business ownership is similar in Birmingham and Detroit (17.3% and 18.7%), but female-owned firms are much smaller in size in Birmingham. They only account for 11.5% of total employment, 12% of payroll, and 10.6% of total sales and receipts. 
 
-Now that we have this building block, we can easily apply this to other regions, and explore other demographic groups such as black-owned businesses, minority-owned businesses. 
+## Scale it up
+Let's write a function to easily adapt this script to explore explore other demographic groups in other regions. 
+
+```{r function}
+
+summarise_abs <- function(df, target, col, col_var, NAICS = "00"){
+  col <- enquo(col)
+  col_LABEL <- paste0((rlang::as_label(col)),"_LABEL")
+    
+df %>% 
+  filter(GEOID %in% target) %>% 
+  filter(!!col %in% col_var) %>% 
+  filter(NAICS2017 == NAICS) %>%
+    
+  select(GEOID, contains("_LABEL"), FIRMPDEMP, EMP, RCPPDEMP, PAYANN) %>% 
+  pivot_longer(FIRMPDEMP:PAYANN) %>%
+  mutate(value = as.numeric(value)) %>% 
+  select(GEOID, NAICS2017_LABEL, col_LABEL, name, value) %>% 
+  pivot_wider(names_from = col_LABEL, values_from = value) 
+}
+```
+
+
+Now, let's look at Asian business ownership in Arlington County, VA (`51013`)
+
+```{r}
+stco_abs_naics %>% 
+  summarise_abs("51013",RACE_GROUP, c("60","96"))%>% 
+  mutate(pct_asian = Asian/Classifiable) %>% 
+  knitr::kable()
+```
+
+Or, Hispanic business ownership in professional services sector in Austin-Round Rock, TX metro area (`12420`)
+
+```{r}
+cbsa_abs_naics %>% 
+  summarise_abs("12420",ETH_GROUP, c("020","096"), "54") %>% 
+  mutate(pct_hispanic = Hispanic/Classifiable) %>% 
+  knitr::kable()
+```
+
