@@ -278,3 +278,5 @@ cbsa_result %>%
 
 
 We can see that female business ownership is similar in these Birmingham and Detroit (17.3% and 18.7%), but female-owned firms are much smaller in size in Birmingham. They only account for 11.5% of total employment, 12% of payroll, and 10.6% of total sales and receipts. 
+
+Now that we have this building block, we can easily apply this to other regions, and explore other demographic groups such as black-owned businesses, minority-owned businesses. 
