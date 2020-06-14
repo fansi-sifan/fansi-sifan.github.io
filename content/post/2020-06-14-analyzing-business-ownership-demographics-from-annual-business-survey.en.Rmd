@@ -1,0 +1,280 @@
+---
+title: Analyzing business ownership demographics from Annual Business Survey
+author: ''
+date: '2020-06-14'
+slug: analyzing-business-ownership-demographics-from-annual-business-survey
+categories: []
+tags:
+  - R
+subtitle: ''
+summary: 'using 2018 census ABS data'
+authors: []
+lastmod: '2020-06-14T11:36:49-04:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+---
+
+Last month, U.S. Census Bureau released its first ever Annual Business Survey [ABS](https://www.census.gov/programs-surveys/abs.html), covering statistics of nonfarm employer businesses in 2017.
+ABS provides business and business owner characteristics such as firms, receipts, payroll and employment by demographic characteristics such as gender, race, ethnicity and veteran status, at regional level. 
+
+Today I'm going to show how to fetch the ABS data using [Census API](https://www.census.gov/data/developers/data-sets.html), and explore the demographics of business ownership across cities, counties, and metropolitan areas in the U.S.
+
+## Fetch ABS data using Census API
+There are many great packages and tutorials that walk you through the process of using Census API, so I won't go into the details. My favorite one is [tidycensus](https://walker-data.com/tidycensus/), but unfortunately it's available for American Community Survey and Decennial Survey only, so I'm going to use [censusapi](https://hrecht.github.io/censusapi/index.html) today, which offers a more flexible query structure.
+
+Let's first take a look at the [ABS API](https://www.census.gov/programs-surveys/abs/data/api.html) endpoints. Navigate to its [variables](https://api.census.gov/data/2017/abscs/variables.html) page, it lists all the variables you can query from this API. 
+
+Here are the variables I decide to include:
+```{r variable list}
+abs_var <- c("GEO_ID", "NAICS2017", "NAICS2017_LABEL", "SEX", "SEX_LABEL", "ETH_GROUP", "ETH_GROUP_LABEL", "RACE_GROUP", "RACE_GROUP_LABEL", "VET_GROUP", "VET_GROUP_LABEL", "FIRMPDEMP", "RCPPDEMP", "EMP", "PAYANN")
+```
+
+Now I'm going to test my query with national data first. 
+
+```{r fetch data}
+
+censusapi::getCensus(
+  name = "abscs",
+  vintage = 2017,
+  vars = abs_var,
+  region = "us:*",
+  key = Sys.getenv("CENSUS_API_KEY")
+) %>% head()
+
+```
+Okay, the query returned a data frame, but I noticed that for some reasons NAICS2017 and NAICS2017_LABEL are not displayed properly, and that seems to be the result of these two columns being coerced to numerical variables. I spent some time investigating the censusapi's source code and fixed the bug. You can see my [pull request](https://github.com/hrecht/censusapi/pull/65/files) here.
+
+```{r modify function, echo=F, include=F}
+getFunction <- function(apiurl, key, get, region, regionin, time, date, period, monthly, category_code, data_type_code, naics, pscode, naics2012, naics2007, naics2002, naics1997, sic, ...) {
+  # Return API's built in error message if invalid call
+  apiCheck <- function(req) {
+    if (req$status_code==400) {
+      error_message <- (gsub("<[^>]*>", "", httr::content(req, as="text")))
+      if (error_message == "error: missing 'for' argument") {
+        stop("This dataset requires you to specify a geography with the 'region' argument.")
+      }
+      stop(paste("The Census Bureau returned the following error message:\n", error_message,
+                 "\n Your API call was: ", print(req$url)))
+    }
+    # Some time series don't give error messages, just don't resolve (e.g. SAIPE)
+    if (req$status_code==204) stop("204, no content was returned.\nSee ?listCensusMetadata to learn more about valid API options.", call. = FALSE)
+    if (identical(httr::content(req, as = "text"), "")) stop(paste("No output to parse. \n Your API call was: ", print(req$url)), call. = FALSE)
+  }
+  
+  apiParse <- function (req) {
+    if (jsonlite::validate(httr::content(req, as="text"))[1] == FALSE) {
+      error_message <- (gsub("<[^>]*>", "", httr::content(req, as="text")))
+      stop(paste("The Census Bureau returned the following error message:\n", error_message, "\nYour api call was: ", req$url))
+    } else {
+      raw <- jsonlite::fromJSON(httr::content(req, as = "text"))
+    }
+  }
+  
+  # Function to clean up column names - particularly ones with periods in them
+  cleanColnames <- function(dt) {
+    # No trailing punct
+    colnames(dt) <- gsub("\\.[[:punct:]]*$", "", colnames(dt))
+    # All punctuation becomes underscore
+    colnames(dt) <- gsub("[[:punct:]]", "_", colnames(dt))
+    # Get rid of repeat underscores
+    colnames(dt) <- gsub("(_)\\1+", "\\1", colnames(dt))
+    return(dt)
+  }
+  
+  responseFormat <- function(raw) {
+    # Make first row the header
+    colnames(raw) <- raw[1, ]
+    df <- data.frame(raw)
+    df <- df[-1,]
+    df <- cleanColnames(df)
+    # Make all columns character
+    df[] <- lapply(df, as.character)
+    # Make columns numeric if they have numbers in the column name - note some APIs use string var names
+    # For ACS data, do not make columns numeric if they are ACS annotation variables - ending in MA or EA or SS
+    # Do not make label variables (ending in _TTL) numeric
+    value_cols <- grep("[0-9]", names(df), value=TRUE)
+    error_cols <- grep("MA|EA|SS|_TTL|_NAME|NAICS2012|NAICS2012_TTL|NAICS2017|NAICS2017_TTL|fage4|FAGE4", value_cols, value=TRUE, ignore.case = T)
+    for(col in setdiff(value_cols, error_cols)) df[,col] <- as.numeric(df[,col])
+    
+    row.names(df) <- NULL
+    return(df)
+  }
+  
+  # Assemble call
+  req <- httr::GET(apiurl, query = list(key = key, get = get, "for" = region, "in" = regionin, category_code = category_code, data_type_code = data_type_code, time = time, DATE = date, PERIOD = period, MONTHLY = monthly, NAICS=naics, PSCODE=pscode, NAICS2012 = naics2012, NAICS2007 = naics2007, NAICS2002 = naics2002, NAICS1997 = naics1997, SIC = sic, ...))
+  
+  # Check the API call for a valid response
+  apiCheck(req)
+  
+  # If check didn't fail, parse the content
+  raw <- apiParse(req)
+  
+  # Format the response into a nice data frame
+  df <- responseFormat(raw)
+}
+
+getCensus <-
+  function(name,
+           vintage = NULL,
+           key = Sys.getenv("CENSUS_KEY"),
+           vars,
+           region = NULL,
+           regionin = NULL,
+           time = NULL,
+           date = NULL,
+           period = NULL,
+           monthly = NULL,
+           category_code = NULL,
+           data_type_code = NULL,
+           naics = NULL,
+           pscode = NULL,
+           naics2012 = NULL,
+           naics2007 = NULL,
+           naics2002 = NULL,
+           naics1997 = NULL,
+           sic = NULL,
+           ...) {
+    
+    constructURL <- function(name, vintage) {
+      if (is.null(vintage)) {
+        apiurl <- paste("https://api.census.gov/data", name, sep="/")
+      } else {
+        apiurl <- paste("https://api.census.gov/data", vintage, name, sep="/")
+      }
+      
+      # Handle messy urls
+      lastchar <- substr(apiurl, nchar(apiurl), nchar(apiurl))
+      if (lastchar=="?" | lastchar=="/") {
+        apiurl <- substr(apiurl, 1, nchar(apiurl)-1)
+      }
+      apiurl
+    }
+    
+    # Check for key in environment
+    key_env <- Sys.getenv("CENSUS_KEY")
+    if ((key_env == "" & key == key_env)) {
+      stop("'key' argument is missing. A Census API key is required and can be requested at https://api.census.gov/data/key_signup.html.\nPlease add your Census key to your .Renviron - see instructions at https://github.com/hrecht/censusapi#api-key-setup")
+    }
+    
+    apiurl <- constructURL(name, vintage)
+    
+    # Census API max vars per call = 50
+    # Splitting function based on work by Nicholas Nagle, https://rpubs.com/nnnagle/19337
+    if(length(vars)>50){
+      # Split vars into list
+      vars <- split(vars, ceiling(seq_along(vars)/50))
+      get <- lapply(vars, function(x) paste(x, sep='', collapse=","))
+      data <- lapply(get, function(x) getFunction(apiurl, key, x, region, regionin, time, date, period, monthly, category_code, data_type_code, naics, pscode, naics2012, naics2007, naics2002, naics1997, sic, ...))
+      colnames <- unlist(lapply(data, names))
+      data <- do.call(cbind,data)
+      names(data) <- colnames
+    } else {
+      get <- paste(vars, sep='', collapse=',')
+      data <- getFunction(apiurl, key, get, region, regionin, time, date, period, monthly, category_code, data_type_code, naics, pscode, naics2012, naics2007, naics2002, naics1997, sic, ...)
+    }
+    # If there are any duplicate columns (ie if you put a variable in vars twice) remove the duplicates
+    data <- data[, !duplicated(colnames(data))]
+    # Reorder columns so that numeric fields follow non-numeric fields
+    # data <- data[,c(which(sapply(data, class)!='numeric'), which(sapply(data, class)=='numeric'))]
+    # Reorder columns so that lowercase column names (geographies) are first
+    data <- data[,c(which(grepl("[a-z]", colnames(data))), which(!grepl("[a-z]", colnames(data))))]
+    return(data)
+  }
+```
+
+
+Let's run this again:
+
+```{r fixed API}
+getCensus(
+  name = "abscs",
+  vintage = 2017,
+  vars = abs_var,
+  region = "us:*",
+  key = Sys.getenv("CENSUS_API_KEY")
+)
+```
+
+Looking great!
+
+Now let's get the data for every metro areas and counties. 
+
+```{r get county and metro data}
+
+cbsa_abs_naics <- getCensus(
+  name = "abscs",
+  vintage = 2017,
+  vars = abs_var,
+  region = "metropolitan statistical area/micropolitan statistical area:*",
+  key = Sys.getenv("CENSUS_API_KEY")
+)
+
+
+stco_abs_naics <- getCensus(
+  name = "abscs",
+  vintage = 2017,
+  vars = abs_var,
+  region = "county:*",
+  key = Sys.getenv("CENSUS_API_KEY")
+)
+
+
+```
+
+
+## How does business ownership demographics look like in Detroit metropolita area? 
+
+First, let's specify the [GEOIDs](https://www.census.gov/programs-surveys/geography/guidance/geo-identifiers.html) of the place of interests. If you are not familiar with census geographies, MCDC has a very friendly GEOID [lookup](https://census.missouri.edu/geocodes/) tool.  
+
+```{r library, echo=F}
+library(tidyverse)
+```
+```{r target regions}
+
+target_cbsa <- c("19820","13820")   # cbsa codes for Detroit-Warren-Dearborn, MI and Birmingham-Hoover, AL
+
+```
+
+Now we can find everything about Detroit by filtering the raw data. Use count() to get the codebook of NAICS2017, SEX, RACE_GROUP, ETH_GROUP, VET_GROUP. 
+
+```{r codebook}
+cbsa_abs_naics %>% 
+  count(SEX, SEX_LABEL)
+```
+
+
+```{r filter metro data}
+cbsa_result <- cbsa_abs_naics %>% 
+  mutate(cbsa_code = str_sub(GEO_ID, -5,-1)) %>% 
+  filter(cbsa_code %in% target_cbsa) %>% 
+  filter(SEX %in% c("002","096")) %>% 
+  filter(NAICS2017 == "72") %>% 
+  select(cbsa_code, contains("_LABEL"), FIRMPDEMP, EMP, RCPPDEMP, PAYANN) 
+
+cbsa_result
+
+```
+
+Let's reshape the data to calculate number of firms (FIRMPDEMP), employment (EMP), receipts (RCPPDEMP), and payroll (PAYANN) of female-owed businesses in these two metro areas
+```{r reshape and plot}
+cbsa_result %>% 
+  pivot_longer(FIRMPDEMP:PAYANN) %>%
+  mutate(value = as.numeric(value)) %>% 
+  select(cbsa_code, NAICS2017_LABEL, SEX_LABEL, name, value) %>% 
+  pivot_wider(names_from = "SEX_LABEL", values_from = "value") %>% 
+  mutate(pct_female = Female/Classifiable) %>% 
+  
+  ggplot(aes(x = name, y = pct_female, fill = name, label = scales::percent(pct_female, accuracy = 0.1)))+
+  geom_col()+
+  geom_text(vjust = -0.5)+
+  facet_wrap(~cbsa_code)+
+  scale_y_continuous(labels = scales::percent, "share of female owned businesses")+
+  theme_classic()
+```
+
+
+We can see that female business ownership is similar in these Birmingham and Detroit (17.3% and 18.7%), but female-owned firms are much smaller in size in Birmingham. They only account for 11.5% of total employment, 12% of payroll, and 10.6% of total sales and receipts. 
