@@ -29,7 +29,8 @@ There are many great packages and tutorials that walk you through the process of
 Let's first take a look at the [ABS API](https://www.census.gov/programs-surveys/abs/data/api.html) endpoints. Navigate to its [variables](https://api.census.gov/data/2017/abscs/variables.html) page, it lists all the variables you can query from this API. 
 
 Here are the variables I decide to include:
-```{r variable list}
+```{r variable list, echo=F}
+library(tidyverse)
 abs_var <- c("GEO_ID", "NAICS2017", "NAICS2017_LABEL", "SEX", "SEX_LABEL", "ETH_GROUP", "ETH_GROUP_LABEL", "RACE_GROUP", "RACE_GROUP_LABEL", "VET_GROUP", "VET_GROUP_LABEL", "FIRMPDEMP", "RCPPDEMP", "EMP", "PAYANN")
 ```
 
@@ -230,9 +231,6 @@ stco_abs_naics <- getCensus(
 
 First, let's specify the [GEOIDs](https://www.census.gov/programs-surveys/geography/guidance/geo-identifiers.html) of the place of interests. If you are not familiar with census geographies, MCDC has a very friendly GEOID [lookup](https://census.missouri.edu/geocodes/) tool.  
 
-```{r library, echo=F}
-library(tidyverse)
-```
 ```{r target regions}
 
 target_cbsa <- c("19820","13820")   # cbsa codes for Detroit-Warren-Dearborn, MI and Birmingham-Hoover, AL
