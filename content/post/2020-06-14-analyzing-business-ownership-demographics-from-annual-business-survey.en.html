@@ -22,7 +22,7 @@ projects: []
 
 <p>Last month, U.S. Census Bureau released its first ever Annual Business Survey <a href="https://www.census.gov/programs-surveys/abs.html">ABS</a>, covering statistics of nonfarm employer businesses in 2017.
 ABS provides business and business owner characteristics such as firms, receipts, payroll and employment by demographic characteristics such as gender, race, ethnicity and veteran status, at regional level.</p>
-<p>Today I’m going to show how to fetch the ABS data using <a href="https://www.census.gov/data/developers/data-sets.html">Census API</a>, and explore the demographics of business ownership across cities, counties, and metropolitan areas in the U.S.</p>
+<p>Today I’m going to demonstrate how to fetch the ABS data using <a href="https://www.census.gov/data/developers/data-sets.html">Census API</a>, and explore the demographics of business ownership across cities, counties, and metropolitan areas in the U.S.</p>
 <div id="fetch-abs-data-using-census-api" class="section level2">
 <h2>Fetch ABS data using Census API</h2>
 <p>There are many great packages and tutorials that walk you through the process of using Census API, so I won’t go into the details. My favorite one is <a href="https://walker-data.com/tidycensus/">tidycensus</a>, but unfortunately it’s available for American Community Survey and Decennial Survey only, so I’m going to use <a href="https://hrecht.github.io/censusapi/index.html">censusapi</a> today, which offers a more flexible query structure.</p>
@@ -62,8 +62,8 @@ abs_var &lt;- c(&quot;GEO_ID&quot;, &quot;NAICS2017&quot;, &quot;NAICS2017_LABEL
 ## 4     78091    74506263    664947   18735668
 ## 5    206437   309414268   1895189   64179111
 ## 6   5744643 36579575617 127738274 6534271084</code></pre>
-<p>Okay, the query returned a data frame, but I noticed that for some reasons <code>NAICS2017</code> and <code>NAICS2017_LABEL</code> are not displayed properly, and the warning message seems to suggest that this is the result of these two columns being coerced to numerical variables. I spent some time investigating the <code>censusapi</code>’s source code and fixed the bug. You can see my <a href="https://github.com/hrecht/censusapi/pull/65/files">pull request</a> here.</p>
-<p>Let’s run this again:</p>
+<p>Okay, the query returned a data frame, but I noticed that for some reasons <code>NAICS2017</code> and <code>NAICS2017_LABEL</code> are not displayed properly, and the warning message seems to suggest that this is the result of these two columns being coerced to numerical variables. I spent some time investigating the <code>censusapi::getCensus()</code>’s source code and fixed the bug, which you can see my <a href="https://github.com/hrecht/censusapi/pull/65/files">pull request</a> here.</p>
+<p>Let’s run this again with the modified <code>getCensus()</code> function:</p>
 <pre class="r"><code>getCensus(
   name = &quot;abscs&quot;,
   vintage = 2017,
@@ -92,7 +92,7 @@ abs_var &lt;- c(&quot;GEO_ID&quot;, &quot;NAICS2017&quot;, &quot;NAICS2017_LABEL
 ## 4           Total     78091    74506263    664947   18735668
 ## 5           Total    206437   309414268   1895189   64179111
 ## 6           Total   5744643 36579575617 127738274 6534271084</code></pre>
-<p>Looking great!</p>
+<p>Looking great! Now the <code>NAICS2017</code> and <code>NAICS2017_LABEL</code> are displaying correctly.</p>
 <p>Now let’s get the data for every metro areas and counties.</p>
 <pre class="r"><code>cbsa_abs_naics &lt;- getCensus(
   name = &quot;abscs&quot;,
