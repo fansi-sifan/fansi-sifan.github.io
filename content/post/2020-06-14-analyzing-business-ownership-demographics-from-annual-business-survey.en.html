@@ -1,0 +1,289 @@
+---
+title: Analyzing business ownership demographics from Annual Business Survey
+author: ''
+date: '2020-06-14'
+slug: analyzing-business-ownership-demographics-from-annual-business-survey
+categories: []
+tags:
+  - R
+subtitle: ''
+summary: 'using 2018 census ABS data'
+authors: []
+lastmod: '2020-06-14T11:36:49-04:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+---
+
+
+
+<p>Last month, U.S. Census Bureau released its first ever Annual Business Survey <a href="https://www.census.gov/programs-surveys/abs.html">ABS</a>, covering statistics of nonfarm employer businesses in 2017.
+ABS provides business and business owner characteristics such as firms, receipts, payroll and employment by demographic characteristics such as gender, race, ethnicity and veteran status, at regional level.</p>
+<p>Today I’m going to demonstrate how to fetch the ABS data using <a href="https://www.census.gov/data/developers/data-sets.html">Census API</a>, and explore the demographics of business ownership across cities, counties, and metropolitan areas in the U.S.</p>
+<div id="fetch-abs-data-using-census-api" class="section level2">
+<h2>Fetch ABS data using Census API</h2>
+<p>There are many great packages and tutorials that walk you through the process of using Census API, so I won’t go into the details. My favorite one is <a href="https://walker-data.com/tidycensus/">tidycensus</a>, but unfortunately it’s available for American Community Survey and Decennial Survey only, so I’m going to use <a href="https://hrecht.github.io/censusapi/index.html">censusapi</a> today, which offers a more flexible query structure.</p>
+<p>Let’s first take a look at the <a href="https://www.census.gov/programs-surveys/abs/data/api.html">ABS API</a> endpoints. Navigate to its <a href="https://api.census.gov/data/2017/abscs/variables.html">variables</a> page, it lists all the variables you can query from this API.</p>
+<p>Here are the variables I decide to include:</p>
+<pre class="r"><code>library(tidyverse)
+abs_var &lt;- c(&quot;GEO_ID&quot;, &quot;NAICS2017&quot;, &quot;NAICS2017_LABEL&quot;, &quot;SEX&quot;, &quot;SEX_LABEL&quot;, &quot;ETH_GROUP&quot;, &quot;ETH_GROUP_LABEL&quot;, &quot;RACE_GROUP&quot;, &quot;RACE_GROUP_LABEL&quot;, &quot;VET_GROUP&quot;, &quot;VET_GROUP_LABEL&quot;, &quot;FIRMPDEMP&quot;, &quot;RCPPDEMP&quot;, &quot;EMP&quot;, &quot;PAYANN&quot;)</code></pre>
+<p>Now I’m going to test my query with national data first.</p>
+<pre class="r"><code>censusapi::getCensus(
+  name = &quot;abscs&quot;,
+  vintage = 2017,
+  vars = abs_var,
+  region = &quot;us:*&quot;,
+  key = Sys.getenv(&quot;CENSUS_API_KEY&quot;)
+) %&gt;% head()</code></pre>
+<pre><code>## Warning in responseFormat(raw): NAs introduced by coercion
+
+## Warning in responseFormat(raw): NAs introduced by coercion</code></pre>
+<pre><code>##   us    GEO_ID NAICS2017 NAICS2017_LABEL SEX           SEX_LABEL ETH_GROUP
+## 1  1 0100000US         0              NA 003                Male       001
+## 2  1 0100000US         0              NA 004 Equally male/female       001
+## 3  1 0100000US         0              NA 001               Total       020
+## 4  1 0100000US         0              NA 002              Female       020
+## 5  1 0100000US         0              NA 003                Male       020
+## 6  1 0100000US         0              NA 001               Total       001
+##   ETH_GROUP_LABEL RACE_GROUP RACE_GROUP_LABEL VET_GROUP VET_GROUP_LABEL
+## 1           Total         00            Total       001           Total
+## 2           Total         00            Total       001           Total
+## 3        Hispanic         00            Total       001           Total
+## 4        Hispanic         00            Total       001           Total
+## 5        Hispanic         00            Total       001           Total
+## 6           Total         00            Total       001           Total
+##   FIRMPDEMP    RCPPDEMP       EMP     PAYANN
+## 1   3480438 10018649629  44854631 1986477555
+## 2    859735  1180988058   8030678  272302530
+## 3    322076   422573589   2872550   90985526
+## 4     78091    74506263    664947   18735668
+## 5    206437   309414268   1895189   64179111
+## 6   5744643 36579575617 127738274 6534271084</code></pre>
+<p>Okay, the query returned a data frame, but I noticed that for some reasons <code>NAICS2017</code> and <code>NAICS2017_LABEL</code> are not displayed properly, and the warning message seems to suggest that this is the result of these two columns being coerced to numerical variables. I spent some time investigating the <code>censusapi::getCensus()</code>’s source code and fixed the bug, which you can see my <a href="https://github.com/hrecht/censusapi/pull/65/files">pull request</a> here.</p>
+<p>Let’s run this again with the modified <code>getCensus()</code> function:</p>
+<pre class="r"><code>getCensus(
+  name = &quot;abscs&quot;,
+  vintage = 2017,
+  vars = abs_var,
+  region = &quot;us:*&quot;,
+  key = Sys.getenv(&quot;CENSUS_API_KEY&quot;)
+) %&gt;% head()</code></pre>
+<pre><code>##   us    GEO_ID NAICS2017       NAICS2017_LABEL SEX           SEX_LABEL
+## 1  1 0100000US        00 Total for all sectors 003                Male
+## 2  1 0100000US        00 Total for all sectors 004 Equally male/female
+## 3  1 0100000US        00 Total for all sectors 001               Total
+## 4  1 0100000US        00 Total for all sectors 002              Female
+## 5  1 0100000US        00 Total for all sectors 003                Male
+## 6  1 0100000US        00 Total for all sectors 001               Total
+##   ETH_GROUP ETH_GROUP_LABEL RACE_GROUP RACE_GROUP_LABEL VET_GROUP
+## 1       001           Total         00            Total       001
+## 2       001           Total         00            Total       001
+## 3       020        Hispanic         00            Total       001
+## 4       020        Hispanic         00            Total       001
+## 5       020        Hispanic         00            Total       001
+## 6       001           Total         00            Total       001
+##   VET_GROUP_LABEL FIRMPDEMP    RCPPDEMP       EMP     PAYANN
+## 1           Total   3480438 10018649629  44854631 1986477555
+## 2           Total    859735  1180988058   8030678  272302530
+## 3           Total    322076   422573589   2872550   90985526
+## 4           Total     78091    74506263    664947   18735668
+## 5           Total    206437   309414268   1895189   64179111
+## 6           Total   5744643 36579575617 127738274 6534271084</code></pre>
+<p>Looking great! Now the <code>NAICS2017</code> and <code>NAICS2017_LABEL</code> are displaying correctly.</p>
+<p>Now let’s get the data for every metro areas and counties.</p>
+<pre class="r"><code>cbsa_abs_naics &lt;- getCensus(
+  name = &quot;abscs&quot;,
+  vintage = 2017,
+  vars = abs_var,
+  region = &quot;metropolitan statistical area/micropolitan statistical area:*&quot;,
+  key = Sys.getenv(&quot;CENSUS_API_KEY&quot;)
+) %&gt;% 
+  mutate(GEOID = str_sub(GEO_ID, -5,-1)) 
+
+stco_abs_naics &lt;- getCensus(
+  name = &quot;abscs&quot;,
+  vintage = 2017,
+  vars = abs_var,
+  region = &quot;county:*&quot;,
+  key = Sys.getenv(&quot;CENSUS_API_KEY&quot;)
+) %&gt;% 
+  mutate(GEOID = str_sub(GEO_ID, -5,-1))</code></pre>
+</div>
+<div id="exploratory-data-analysis" class="section level2">
+<h2>Exploratory Data Analysis</h2>
+<p>How does business ownership demographics look like in Detroit and Birmingham?</p>
+<p>First, let’s specify the <a href="https://www.census.gov/programs-surveys/geography/guidance/geo-identifiers.html">GEOIDs</a> of the place of interests. If you are not familiar with census geographies, MCDC has a very friendly GEOID <a href="https://census.missouri.edu/geocodes/">lookup</a> tool.</p>
+<pre class="r"><code>target_cbsa &lt;- c(&quot;19820&quot;,&quot;13820&quot;)   # cbsa codes for Detroit-Warren-Dearborn, MI and Birmingham-Hoover, AL</code></pre>
+<p>Now we can find everything about these two metro areas by filtering the raw data. Use <code>count()</code> to get the codebook of <code>NAICS2017</code>, <code>SEX</code>, <code>RACE_GROUP</code>, <code>ETH_GROUP</code>, <code>VET_GROUP</code>. For example:</p>
+<pre class="r"><code>cbsa_abs_naics %&gt;% 
+  count(SEX, SEX_LABEL)</code></pre>
+<pre><code>##   SEX           SEX_LABEL      n
+## 1 001               Total 119619
+## 2 002              Female  15558
+## 3 003                Male  18796
+## 4 004 Equally male/female  16123
+## 5 096        Classifiable   8325
+## 6 098      Unclassifiable   7937</code></pre>
+<p>Let’s take a look at female ownership. So we will get data for female (<code>002</code>), and all businesses that could be classified by gender (<code>096</code>).</p>
+<pre class="r"><code>cbsa_result &lt;- cbsa_abs_naics %&gt;% 
+  filter(GEOID %in% target_cbsa) %&gt;% 
+  filter(SEX %in% c(&quot;002&quot;,&quot;096&quot;)) %&gt;% 
+  filter(NAICS2017 == &quot;72&quot;) %&gt;% 
+  select(GEOID, contains(&quot;_LABEL&quot;), FIRMPDEMP, EMP, RCPPDEMP, PAYANN) 
+
+cbsa_result</code></pre>
+<pre><code>##   GEOID                 NAICS2017_LABEL    SEX_LABEL ETH_GROUP_LABEL
+## 1 13820 Accommodation and food services       Female           Total
+## 2 13820 Accommodation and food services Classifiable    Classifiable
+## 3 19820 Accommodation and food services       Female           Total
+## 4 19820 Accommodation and food services Classifiable    Classifiable
+##   RACE_GROUP_LABEL VET_GROUP_LABEL FIRMPDEMP    EMP RCPPDEMP  PAYANN
+## 1            Total           Total       256   3404   184036   57926
+## 2     Classifiable    Classifiable      1479  29483  1736740  482008
+## 3            Total           Total      1195  20522  1548070  382517
+## 4     Classifiable    Classifiable      6387 129103  7308642 2047629</code></pre>
+<p>I’m going to reshape the data to calculate number of firms (<code>FIRMPDEMP</code>), employment (<code>EMP</code>), receipts (<code>RCPPDEMP</code>), and payroll (<code>PAYANN</code>) of female-owed businesses in these two metro areas.</p>
+<pre class="r"><code>cbsa_result %&gt;% 
+  pivot_longer(FIRMPDEMP:PAYANN) %&gt;%
+  mutate(value = as.numeric(value)) %&gt;% 
+  select(GEOID, NAICS2017_LABEL, SEX_LABEL, name, value) %&gt;% 
+  pivot_wider(names_from = &quot;SEX_LABEL&quot;, values_from = &quot;value&quot;) %&gt;% 
+  mutate(pct_female = Female/Classifiable) %&gt;% 
+  
+  ggplot(aes(x = name, y = pct_female, fill = name, label = scales::percent(pct_female, accuracy = 0.1)))+
+  geom_col()+
+  geom_text(vjust = -0.5)+
+  facet_wrap(~GEOID)+
+  scale_y_continuous(labels = scales::percent, &quot;share of female owned businesses&quot;)+
+  theme_classic()</code></pre>
+<p><img src="/post/2020-06-14-analyzing-business-ownership-demographics-from-annual-business-survey.en_files/figure-html/reshape%20and%20plot-1.png" width="672" /></p>
+<p>We can see that in the accommodation sector, female business ownership is similar in Birmingham and Detroit (17.3% and 18.7%), but female-owned firms are much smaller in size in Birmingham. They only account for 11.5% of total employment, 12% of payroll, and 10.6% of total sales and receipts.</p>
+</div>
+<div id="scale-it-up" class="section level2">
+<h2>Scale it up</h2>
+<p>Let’s write a function to easily adapt this script to explore explore other demographic groups in other regions.</p>
+<pre class="r"><code>summarise_abs &lt;- function(df, target, col, col_var, NAICS = &quot;00&quot;){
+  col &lt;- enquo(col)
+  col_LABEL &lt;- paste0((rlang::as_label(col)),&quot;_LABEL&quot;)
+    
+df %&gt;% 
+  filter(GEOID %in% target) %&gt;% 
+  filter(!!col %in% col_var) %&gt;% 
+  filter(NAICS2017 == NAICS) %&gt;%
+    
+  select(GEOID, contains(&quot;_LABEL&quot;), FIRMPDEMP, EMP, RCPPDEMP, PAYANN) %&gt;% 
+  pivot_longer(FIRMPDEMP:PAYANN) %&gt;%
+  mutate(value = as.numeric(value)) %&gt;% 
+  select(GEOID, NAICS2017_LABEL, col_LABEL, name, value) %&gt;% 
+  pivot_wider(names_from = col_LABEL, values_from = value) 
+}</code></pre>
+<p>Now, let’s look at Asian business ownership in Arlington County, VA (<code>51013</code>)</p>
+<pre class="r"><code>stco_abs_naics %&gt;% 
+  summarise_abs(&quot;51013&quot;,RACE_GROUP, c(&quot;60&quot;,&quot;96&quot;))%&gt;% 
+  mutate(pct_asian = Asian/Classifiable) %&gt;% 
+  knitr::kable()</code></pre>
+<pre><code>## Note: Using an external vector in selections is ambiguous.
+## i Use `all_of(col_LABEL)` instead of `col_LABEL` to silence this message.
+## i See &lt;https://tidyselect.r-lib.org/reference/faq-external-vector.html&gt;.
+## This message is displayed once per session.</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">GEOID</th>
+<th align="left">NAICS2017_LABEL</th>
+<th align="left">name</th>
+<th align="right">Asian</th>
+<th align="right">Classifiable</th>
+<th align="right">pct_asian</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">51013</td>
+<td align="left">Total for all sectors</td>
+<td align="left">FIRMPDEMP</td>
+<td align="right">622</td>
+<td align="right">3655</td>
+<td align="right">0.1701778</td>
+</tr>
+<tr class="even">
+<td align="left">51013</td>
+<td align="left">Total for all sectors</td>
+<td align="left">EMP</td>
+<td align="right">6587</td>
+<td align="right">50475</td>
+<td align="right">0.1305002</td>
+</tr>
+<tr class="odd">
+<td align="left">51013</td>
+<td align="left">Total for all sectors</td>
+<td align="left">RCPPDEMP</td>
+<td align="right">1307860</td>
+<td align="right">9785745</td>
+<td align="right">0.1336495</td>
+</tr>
+<tr class="even">
+<td align="left">51013</td>
+<td align="left">Total for all sectors</td>
+<td align="left">PAYANN</td>
+<td align="right">384583</td>
+<td align="right">3182245</td>
+<td align="right">0.1208527</td>
+</tr>
+</tbody>
+</table>
+<p>Or, Hispanic business ownership in professional services sector in Austin-Round Rock, TX metro area (<code>12420</code>)</p>
+<pre class="r"><code>cbsa_abs_naics %&gt;% 
+  summarise_abs(&quot;12420&quot;,ETH_GROUP, c(&quot;020&quot;,&quot;096&quot;), &quot;54&quot;) %&gt;% 
+  mutate(pct_hispanic = Hispanic/Classifiable) %&gt;% 
+  knitr::kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">GEOID</th>
+<th align="left">NAICS2017_LABEL</th>
+<th align="left">name</th>
+<th align="right">Hispanic</th>
+<th align="right">Classifiable</th>
+<th align="right">pct_hispanic</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">12420</td>
+<td align="left">Professional, scientific, and technical services</td>
+<td align="left">FIRMPDEMP</td>
+<td align="right">430</td>
+<td align="right">8278</td>
+<td align="right">0.0519449</td>
+</tr>
+<tr class="even">
+<td align="left">12420</td>
+<td align="left">Professional, scientific, and technical services</td>
+<td align="left">EMP</td>
+<td align="right">2210</td>
+<td align="right">51394</td>
+<td align="right">0.0430011</td>
+</tr>
+<tr class="odd">
+<td align="left">12420</td>
+<td align="left">Professional, scientific, and technical services</td>
+<td align="left">RCPPDEMP</td>
+<td align="right">289735</td>
+<td align="right">10400407</td>
+<td align="right">0.0278580</td>
+</tr>
+<tr class="even">
+<td align="left">12420</td>
+<td align="left">Professional, scientific, and technical services</td>
+<td align="left">PAYANN</td>
+<td align="right">123854</td>
+<td align="right">3865307</td>
+<td align="right">0.0320425</td>
+</tr>
+</tbody>
+</table>
+</div>
