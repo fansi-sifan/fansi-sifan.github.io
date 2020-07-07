@@ -4,9 +4,9 @@ library(tidytext)
 library(wordcloud)
 library(SnowballC)
 
-# downlaod text
-txt_prep <- function(ch){
-  url <- paste0("http://microtop.ca/lepetitprince/chapitre",ch,".html")
+# downlaod le petit prince
+txt_prep <- function(ch = "", link){
+  url <- paste0(link,ch,".html")
   
   tmp <- url %>% 
     read_html() %>% 
@@ -21,13 +21,15 @@ txt_prep <- function(ch){
   tmp %>% 
     # make dataframe
     tibble(line = 1:length(tmp), text = tmp) %>% 
-    select(-`.`) %>% 
+    select(line, text) %>% 
     mutate(chapter = ch)
   }
 
-
+# L'etranger
+txt_df <- txt_prep(link = "https://www.ebooksgratuits.com/html/camus_l_etranger")
 # tidy text
-txt_df <- purrr::map_dfr(str_pad(seq(1:27),2,"left","0"),txt_prep)
+# txt_prep(link = "http://microtop.ca/lepetitprince/chapitre", ch = "02")
+txt_df <- purrr::map_dfr(str_pad(seq(1:27),2,"left","0"),txt_prep, link = "http://microtop.ca/lepetitprince/chapitre")
 
 # stop words
 stop_words <- get_stopwords("fr","stopwords-iso")
@@ -41,16 +43,14 @@ tidy_books %>%
   count(word) %>% 
   mutate(word_alt = wordStem(word, language = "fre")) %>%
   count(word_alt, sort = TRUE) %>% view()
-  group_by(chapter) %>%
-  count(word_alt, sort = TRUE) %>%
-  top_n(3) %>%
-  arrange(chapter)
+  # group_by(chapter) %>%
+  # count(word_alt, sort = TRUE) %>%
+  # top_n(3) %>%
+  # arrange(chapter)
 
   # skimr::skim()
 
   with(wordcloud(word, n, max.words = 100, random.color = T))
-
-update_packages('dplyr')
 
   # bigram
 tidy_books_bi <- txt_df %>% 
