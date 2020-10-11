@@ -10,7 +10,7 @@ authors:
 superuser: true
 
 # Role/position
-role: Research Analyst, Metropolitan Policy Program
+role: Senior Research Analyst, Metropolitan Policy Program
 
 # Organizations/Affiliations
 organizations:
@@ -18,7 +18,7 @@ organizations:
   url: "https://www.brookings.edu/author/sifan-liu/"
 
 # Short bio (displayed in user profile at end of posts)
-bio: My research interests include regional policy on innovation, entrepreneurship ecosystem, and economic development.
+bio: I uses spatial analysis and data science tools to conduct data-driven policy research. I am a [certified RStudio Instructor](https://education.rstudio.com/trainers/people/liu+sifan/). My research interests include regional policy on innovation, entrepreneurship ecosystem, and economic development.
 
 interests:
 - Entrepreneurship ecosystem
