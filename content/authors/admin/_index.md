@@ -71,6 +71,6 @@ email: "sliu@brookings.edu"
 # - Visitors
 ---
 
-Hi! I'm Sifan Liu, a research analyst with the Metropolitan Policy Program at Brookings. My research inserests include regional policy on innovation, entrepreneurship ecosystem, and economic development. I have publisehd in English and Chinese on various aspects of urban economics. I am enthuastic about using data science in social science research.   
+Hi! I'm Sifan Liu, a research analyst with the Metropolitan Policy Program at Brookings. I uses spatial analysis and data science tools to conduct data-driven policy research. I am a [certified RStudio Instructor](https://education.rstudio.com/trainers/people/liu+sifan/). My research inserests include regional policy on innovation, entrepreneurship ecosystem, and economic development. I have publisehd in English and Chinese on various aspects of urban economics. 
 
 I'm from Shanghai but I currently live in Washington DC. Outside of work, you may find me in DC's art studios and climbing gyms.  
