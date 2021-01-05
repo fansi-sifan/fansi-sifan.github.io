@@ -1,3 +1,11 @@
+# mobi =======
+
+mobi <- readr::read_lines("../../../Downloads/l'etranger.mobi")
+
+mobi
+
+
+# txt analysis =======
 library(tidyverse)
 library(rvest)
 library(tidytext)
