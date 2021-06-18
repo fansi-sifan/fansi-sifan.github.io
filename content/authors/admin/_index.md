@@ -74,3 +74,5 @@ email: "sliu@brookings.edu"
 Hi! I'm Sifan Liu, a senior research analyst with the Metropolitan Policy Program at Brookings. I use spatial analysis and data science tools to conduct data-driven policy research. I am a [certified RStudio Instructor](https://education.rstudio.com/trainers/people/liu+sifan/). My research interests include regional policy on innovation, entrepreneurship ecosystem, and economic development. 
 
 I have participated in panel talks on various topics, including [business incentives and entrepreneurship](https://www.kauffman.org/entrepreneurship/research/issue-forum/entrepreneurship-business-incentives-webinar/), and minority business ownership.
+
+I co-founded [Data Whale](https://www.data-whale.com/), a team providing data-driven policy analysis in education, regional economy, health care, international development and beyond.
