@@ -10,12 +10,12 @@ authors:
 superuser: true
 
 # Role/position
-role: Senior Research Analyst, Metropolitan Policy Program
+role: AI & Tech Advocate | Data science | Public Policy
 
 # Organizations/Affiliations
 organizations:
-- name: Brookings Institution
-  url: "https://www.brookings.edu/author/sifan-liu/"
+- name: LinkedIn
+  url: "https://www.linkedin.com/in/sifanliu/"
 
 # Short bio (displayed in user profile at end of posts)
 bio: I uses spatial analysis and data science tools to conduct data-driven policy research. I am a [certified RStudio Instructor](https://education.rstudio.com/trainers/people/liu+sifan/). My research interests include regional policy on innovation, entrepreneurship ecosystem, and economic development.
@@ -23,7 +23,7 @@ bio: I uses spatial analysis and data science tools to conduct data-driven polic
 interests:
 - Entrepreneurship ecosystem
 - Economic development
-- Future of work
+- Artificial Intelligence
 
 education:
   courses:
@@ -62,7 +62,7 @@ social:
 #   link: files/cv.pdf
 
 # Enter email to display Gravatar (if Gravatar enabled in Config)
-email: "sliu@brookings.edu"
+email: "sifan1121@gmail.com"
 
 # Organizational groups that you belong to (for People widget)
 #   Set this to `[]` or comment out if you are not using People widget.
@@ -71,8 +71,6 @@ email: "sliu@brookings.edu"
 # - Visitors
 ---
 
-Hi! I'm Sifan Liu, a senior research analyst with the Metropolitan Policy Program at Brookings. I use spatial analysis and data science tools to conduct data-driven policy research. I am a [certified RStudio Instructor](https://education.rstudio.com/trainers/people/liu+sifan/). My research interests include regional policy on innovation, entrepreneurship ecosystem, and economic development. 
-
-I have participated in panel talks on various topics, including [business incentives and entrepreneurship](https://www.kauffman.org/entrepreneurship/research/issue-forum/entrepreneurship-business-incentives-webinar/), and minority business ownership.
+Hi! I'm Sifan Liu, experienced data scientist and strategic thinker with a unique blend of technical acumen, policy research, and business insights. Guided by my ongoing commitment to understanding and shaping the societal impact of emerging technologies, my journey has led me to study the geography of AI innovation, to consult for city governments on economic development, and to use data-driven strategies to transform startup ecosystems.
 
 I co-founded [Data Whale](https://www.data-whale.com/), a team providing data-driven policy analysis in education, regional economy, health care, international development and beyond.

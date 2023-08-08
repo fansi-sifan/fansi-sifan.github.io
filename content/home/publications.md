@@ -3,7 +3,7 @@
 # This section displays recent blog posts from `content/publication/`.
 
 widget = "pages"  # See https://sourcethemes.com/academic/docs/page-builder/
-headless = true  # This file represents a page section.
+headless = false  # This file represents a page section.
 active = true  # Activate this widget? true/false
 weight = 90  # Order that this section will appear.
 
@@ -68,4 +68,4 @@ subtitle = ""
 +++
 
 
-<script src="//rss.bloople.net/?url=https%3A%2F%2Fwww.brookings.edu%2Fauthor%2Fsifan-liu%2Ffeed%2F&showtitle=false&type=js"></script>
+<script src="//rss.bloople.net/?url=https%3A%2F%2Fwww.brookings.edu%2Fpeople%2Fsifan-liu%2Ffeed%2F&showtitle=false&type=js"></script>

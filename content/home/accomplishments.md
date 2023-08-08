@@ -19,14 +19,16 @@ date_format = "Jan 2006"
 #   Begin/end multi-line descriptions with 3 quotes `"""`.
 
 [[item]]
+  organization = "Amazon Web Services"
+  title = "AWS Cloud Practitioner Certificate"
+  certificate_url = "https://www.credly.com/badges/bef67d39-bdce-4d4b-ac81-834c8db22118/public_url"
+  date_start = "2022-11-28"
+  
+[[item]]
   organization = "Udacity"
-  organization_url = "https://www.udacity.com/"
   title = "Machine Learning Engineer Nanodegree"
-  url = ""
   certificate_url = "https://confirm.udacity.com/YNYZ2DHG"
   date_start = "2018-05-28"
-  date_end = "2018-08-28"
-  description = "Advanced machine learning techniques and algorithms and how to package and deploy models to a production environment"
 
 
 
