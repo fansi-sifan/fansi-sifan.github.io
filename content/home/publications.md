@@ -4,10 +4,10 @@
 
 widget = "pages"  # See https://sourcethemes.com/academic/docs/page-builder/
 headless = false  # This file represents a page section.
-active = false  # Activate this widget? true/false
-weight = 90  # Order that this section will appear.
+active = true  # Activate this widget? true/false
+weight = 20  # Order that this section will appear.
 
-title = "Recent Publications"
+title = "AI Study Notes"
 subtitle = ""
 
 
@@ -67,5 +67,5 @@ subtitle = ""
  css_class = ""
 +++
 
-
-<script src="//rss.bloople.net/?url=https%3A%2F%2Fwww.brookings.edu%2Fpeople%2Fsifan-liu%2Ffeed%2F&showtitle=false&type=js"></script>
+<iframe src="https://v2-embednotion.com/bbb63b70adf64765b90510e1b089531e?v=bc7cac0c6f0b4850bbfc5f8226c50d83&pvs=4"></iframe>
+<style>  iframe { width: 100%; height: 500px; border: 2px solid #ccc; border-radius: 10px; padding: none; }  </style>
