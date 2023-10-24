@@ -18,12 +18,7 @@ organizations:
   url: "https://www.linkedin.com/in/sifanliu/"
 
 # Short bio (displayed in user profile at end of posts)
-bio: I uses spatial analysis and data science tools to conduct data-driven policy research. I am a [certified RStudio Instructor](https://education.rstudio.com/trainers/people/liu+sifan/). My research interests include regional policy on innovation, entrepreneurship ecosystem, and economic development.
 
-interests:
-- Entrepreneurship ecosystem
-- Economic development
-- Artificial Intelligence
 
 education:
   courses:
@@ -70,7 +65,13 @@ email: "sifan1121@gmail.com"
 # - Researchers
 # - Visitors
 ---
+**80% human, 20% AI**
 
-Hi! I'm Sifan Liu, experienced data scientist and strategic thinker with a unique blend of technical acumen, policy research, and business insights. Guided by my ongoing commitment to understanding and shaping the societal impact of emerging technologies, my journey has led me to study the geography of AI innovation, to consult for city governments on economic development, and to use data-driven strategies to transform startup ecosystems.
+👩🏻‍🏭 AI hacker <- Product Analyst <- Data scientist <- Tech Policy Analyst
 
-I co-founded [Data Whale](https://www.data-whale.com/), a team providing data-driven policy analysis in education, regional economy, health care, international development and beyond.
+🤖 Play with my AI Telegram bots: [MagicStory](https://web.telegram.org/k/#@MagicStory_AiBot) | [AgriConnect](https://web.telegram.org/k/#@agriconnect_bot)
+
+🧗🏻‍♀️Climbing walls when not hacking.
+
+
+
